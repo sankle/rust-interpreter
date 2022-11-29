@@ -2012,15 +2012,14 @@
 (defn imprimir-token [indentacion lista-tokens]
   (let [token (first lista-tokens),
         siguiente-token (second lista-tokens),
-        resto-tokens (rest lista-tokens),
-        tokens-sin-salto-post-parentesis (hash-set (symbol ";") (symbol ".") (symbol "->"))]
+        resto-tokens (rest lista-tokens)]
     (cond
       (empty? lista-tokens) nil
       :else
         (cond
           (= token (symbol "{")) (do (prn) (imprimir-indentacion indentacion) (print token) (prn) (imprimir-indentacion (inc indentacion)) (recur (inc indentacion) resto-tokens))
           (= token (symbol "}")) (do (prn) (imprimir-indentacion (dec indentacion)) (print token) (if (not (= siguiente-token (symbol "}"))) (do (prn) (imprimir-indentacion (dec indentacion)))) (recur (dec indentacion) resto-tokens))
-          (or (= token (symbol ";")) (and (= token (symbol ")")) (not (contains? tokens-sin-salto-post-parentesis siguiente-token)))) (do (print token) (if (or (= siguiente-token (symbol "{")) (= siguiente-token (symbol "}"))) nil (do (prn) (imprimir-indentacion indentacion))) (recur indentacion resto-tokens))
+          (or (= token (symbol ";")) (and (= token (symbol ")")) (nil? (re-find #";|.|->|\)|/|>|>=|<|<=|as" (str token))))) (do (print token) (if (or (= siguiente-token (symbol "{")) (= siguiente-token (symbol "}"))) nil (do (prn) (imprimir-indentacion indentacion))) (recur indentacion resto-tokens))
           (string? token) (do (pr token) (print " ") (recur indentacion resto-tokens))
           :else (do (print token) (print " ") (recur indentacion resto-tokens))))))
 
