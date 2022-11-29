@@ -32,6 +32,7 @@
     (is (= false (identificador? 'bool)))
     (is (= true (identificador? 'e120)))
     (is (= false (identificador? '12e0)))
+    (is (= true (identificador? 'mostrar_salida)))
   )
 )
 
