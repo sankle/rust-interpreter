@@ -1574,6 +1574,190 @@
           (generar ,,, 'FMT)))
     amb))
 
+(defn pushfi [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg)]
+    [cod regs-de-act (inc cont-prg) (conj pila (second fetched)) mapa-regs]))
+
+(defn pushfm [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)]
+    [cod regs-de-act (inc cont-prg) (conj pila (second (nth reg-actual (second fetched)))) mapa-regs]))
+
+(defn jmp [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg)]
+    [cod regs-de-act (second fetched) pila mapa-regs]))
+
+(defn jc [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg)]
+    [cod regs-de-act (if (clojure.core/true? (last pila)) (second fetched) (inc cont-prg)) (vec (drop-last pila)) mapa-regs]))
+
+(defn cal [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg)
+        arg (second fetched)]
+    [cod (conj regs-de-act (get mapa-regs arg)) arg (conj pila (inc cont-prg)) mapa-regs]))
+
+(defn retn [cod regs-de-act cont-prg pila mapa-regs]
+  [cod (vec (drop-last regs-de-act)) (last pila) (vec (drop-last pila)) mapa-regs])
+
+(defn nl [cod regs-de-act cont-prg pila mapa-regs]
+  (do (println) [cod regs-de-act (inc cont-prg) pila mapa-regs]))
+
+(defn local-flush [cod regs-de-act cont-prg pila mapa-regs]
+  (do (flush) [cod regs-de-act (inc cont-prg) pila mapa-regs]))
+
+(defn popsub [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico regs-de-act pila reg-actual fetched -)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popmul [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico regs-de-act pila reg-actual fetched *)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popdiv [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico regs-de-act pila reg-actual fetched dividir)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popmod [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico regs-de-act pila reg-actual fetched rem)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popsubref [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched -)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popmulref [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched *)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popdivref [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched dividir)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popmodref [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched rem)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn sub [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico - pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn mul [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico * pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn div [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico dividir pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn mod [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico rem pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn chr [cod regs-de-act cont-prg pila mapa-regs]
+  (let [cadena (last (butlast pila)),
+        idx (last pila)]
+    (if (and (string? cadena) (integer? idx))
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last 2 pila)) (get cadena idx)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
+
+(defn local-or [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico #(or %1 %2) pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn local-and [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico #(and %1 %2) pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn eq [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico = pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn neq [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico not= pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn gt [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico > pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn gte [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico >= pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn lt [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico < pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn lte [cod regs-de-act cont-prg pila mapa-regs]
+  (let [res (aplicar-operador-diadico <= pila)]
+    (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
+
+(defn neg [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila)]
+    (if (number? elem)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (- elem)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
+(defn local-not [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila)]
+    (if (boolean? elem)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (not elem)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
+(defn toi [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila),
+        res (pasar-a-int elem)]
+    (if (integer? res)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) res) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
+(defn tof [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila),
+        res (pasar-a-float elem)]
+    (if (float? res)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) res) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
+(defn sqrt [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila)]
+    (if (number? elem)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/sqrt elem)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
+(defn sin [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila)]
+    (if (number? elem)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/sin elem)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
+(defn atan [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila)]
+    (if (number? elem)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/atan elem)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
+(defn abs [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila)]
+    (if (number? elem)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/abs elem)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LA SIGUIENTE FUNCION DEBERA SER COMPLETADA PARA QUE ANDE EL INTERPRETE DE RUST
 ; FALTAN IMPLEMENTAR (todas como llamados recursivos a la funcion interpretar, con recur y argumentos actualizados):
@@ -1785,206 +1969,180 @@
             (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
 
       ; PUSHFI: PUSH FROM INSTRUCTION. Direccionamiento inmediato. Incrementa cont-prg en 1 y agrega al final de pila el valor del argumento.
-
-      PUSHFI (recur cod regs-de-act (inc cont-prg) (conj pila (second fetched)) mapa-regs)
+      PUSHFI (let [[cod regs-de-act cont-prg pila mapa-regs] (pushfi cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; PUSHFM: PUSH FROM MEMORY. Direccionamiento directo. Incrementa cont-prg en 1 y agrega al final de pila el elemento ubicado en la posicion de reg-actual indicada por el valor del argumento.
-
-      PUSHFM (recur cod regs-de-act (inc cont-prg) (conj pila (second (nth reg-actual (second fetched)))) mapa-regs)
+      PUSHFM (let [[cod regs-de-act cont-prg pila mapa-regs] (pushfm cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; JMP: Salto incondicional. Cambia cont-prg por el valor del argumento.
-
-      JMP (recur cod regs-de-act (second fetched) pila mapa-regs)
+      JMP (let [[cod regs-de-act cont-prg pila mapa-regs] (jmp cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; JC: Salto condicional. Quita el ultimo valor de la pila. Si este es true, cambia cont-prg por el valor del argumento. Si no, incrementa cont-prg en 1.
-
-      JC (recur cod regs-de-act (if (clojure.core/true? (last pila)) (second fetched) (inc cont-prg)) (vec (drop-last pila)) mapa-regs)
+      JC (let [[cod regs-de-act cont-prg pila mapa-regs] (jc cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; CAL: Llamada a una funcion. Agrega al final de regs-de-act el reg-de-act (proveniente de mapa-regs) indicado por el argumento, cambia cont-prg por el valor del argumento y coloca al final de la pila la direccion de retorno (el valor del argumento incrementado en 1).
-
-      CAL (let [arg (second fetched)]
-            (recur cod (conj regs-de-act (get mapa-regs arg)) arg (conj pila (inc cont-prg)) mapa-regs))
+      CAL (let [[cod regs-de-act cont-prg pila mapa-regs] (cal cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; RETN: Indica el retorno de la llamada a un procedimiento (no funcion). Llama recursivamente a interpretar con valores actualizados de regs-de-act (se elimina el ultimo de ellos), cont-prg (pasa a ser el ultimo valor en la pila) y pila (se quita de ella el nuevo cont-prg).
-
-      RETN (recur cod (vec (drop-last regs-de-act)) (last pila) (vec (drop-last pila)) mapa-regs)
+      RETN (let [[cod regs-de-act cont-prg pila mapa-regs] (retn cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; NL: New line. Imprime un salto de linea e incrementa cont-prg en 1.
-
-      NL (do (println) (recur cod regs-de-act (inc cont-prg) pila mapa-regs))
+      NL (let [[cod regs-de-act cont-prg pila mapa-regs] (nl cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; FLUSH: Purga la salida e incrementa cont-prg en 1.
-
-      FLUSH (do (flush) (recur cod regs-de-act (inc cont-prg) pila mapa-regs))
+      FLUSH (let [[cod regs-de-act cont-prg pila mapa-regs] (local-flush cod regs-de-act cont-prg pila mapa-regs)]
+                (recur cod regs-de-act cont-prg pila mapa-regs))
 
       ; POPSUB: Como POPADD, pero resta.
-
-      POPSUB (let [res (asignar-aritmetico regs-de-act pila reg-actual fetched -)]
-               (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
-
+      POPSUB (let [res (popsub cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; POPMUL: Como POPADD, pero multiplica.
-
-      POPMUL (let [res (asignar-aritmetico regs-de-act pila reg-actual fetched *)]
-               (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
+      POPMUL (let [res (popmul cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; POPDIV: Como POPADD, pero divide.
-
-      POPDIV (let [res (asignar-aritmetico regs-de-act pila reg-actual fetched dividir)]
-               (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
+      POPDIV (let [res (popdiv cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; POPMOD: Como POPADD, pero calcula el resto de la division.
-
-      POPMOD (let [res (asignar-aritmetico regs-de-act pila reg-actual fetched rem)]
-               (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
+      POPMOD (let [res (popmod cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; POPSUBREF: Como POPADDREF, pero resta.
-
-      POPSUBREF (let [res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched -)]
-                  (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
+      POPSUBREF (let [res (popsubref cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; POPMULREF: Como POPADDREF, pero multiplica.
-
-      POPMULREF (let [res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched *)]
-                  (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
+      POPMULREF (let [res (popmulref cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; POPDIVREF: Como POPADDREF, pero divide.
-
-      POPDIVREF (let [res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched dividir)]
-                  (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
+      POPDIVREF (let [res (popdivref cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; POPMODREF: Como POPADDREF, pero calcula el resto de la division.
-
-      POPMODREF (let [res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched rem)]
-                  (if (nil? res) res (recur cod res (inc cont-prg) (vec (butlast pila)) mapa-regs)))
+      POPMODREF (let [res (popmodref cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; SUB: Como ADD, pero resta.
-
-      SUB (let [res (aplicar-operador-diadico - pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      SUB (let [res (sub cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; MUL: Como ADD, pero multiplica.
-
-      MUL (let [res (aplicar-operador-diadico * pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      MUL (let [res (mul cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; DIV: Como ADD, pero divide.
-
-      DIV (let [res (aplicar-operador-diadico dividir pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      DIV (let [res (div cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; MOD: Como ADD, pero calcula el resto de la division.
-
-      MOD (let [res (aplicar-operador-diadico rem pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      MOD (let [res (mod cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; CHR: Incrementa cont-prg en 1, quita de la pila dos elementos (un string y un indice), selecciona el char del string indicado por el indice y lo coloca al final de la pila.
-
-      CHR (let [cadena (last (butlast pila)),
-                idx (last pila)]
-            (if (and (string? cadena) (integer? idx))
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last 2 pila)) (get cadena idx)) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 55)) nil)))
+      CHR (let [res (chr cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; OR: Como ADD, pero calcula el or entre los dos valores.
-
-      OR (let [res (aplicar-operador-diadico #(or %1 %2) pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      OR (let [res (local-or cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; AND: Como ADD, pero calcula el and entre los dos valores.
-
-      AND (let [res (aplicar-operador-diadico #(and %1 %2) pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      AND (let [res (local-and cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; EQ: Como ADD, pero calcula la operacion relacional = entre los dos valores.
-
-      EQ (let [res (aplicar-operador-diadico = pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      EQ (let [res (eq cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; NEQ: Como ADD, pero calcula la operacion relacional != entre los dos valores.
-
-      NEQ (let [res (aplicar-operador-diadico not= pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      NEQ (let [res (neq cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; GT:  Como ADD, pero calcula la operacion relacional > entre los dos valores.
-
-      GT (let [res (aplicar-operador-diadico > pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      GT (let [res (gt cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; GTE: Como ADD, pero calcula la operacion relacional >= entre los dos valores.
-
-      GTE (let [res (aplicar-operador-diadico >= pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      GTE (let [res (gte cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; LT: Como ADD, pero calcula la operacion relacional < entre los dos valores.
-
-      LT (let [res (aplicar-operador-diadico < pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      LT (let [res (lt cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; LTE: Como ADD, pero calcula la operacion relacional <= entre los dos valores.
-
-      LTE (let [res (aplicar-operador-diadico <= pila)]
-            (if (nil? res) res (recur cod regs-de-act (inc cont-prg) res mapa-regs)))
+      LTE (let [res (lte cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; NEG: Incrementa cont-prg en 1, quita de la pila un elemento numerico, le cambia el signo y lo coloca al final de la pila.
-
-      NEG (let [elem (last pila)]
-            (if (number? elem)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (- elem)) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
+      NEG (let [res (neg cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; NOT: Incrementa cont-prg en 1, quita de la pila un elemento booleano, lo niega y lo coloca al final de la pila.
-
-      NOT (let [elem (last pila)]
-            (if (boolean? elem)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (not elem)) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
+      NOT (let [res (local-not cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; TOI: Incrementa cont-prg en 1, quita de la pila un elemento numerico, lo convierte a entero y lo coloca al final de la pila.
-      ;; TODO: e parece que no sería "quita de la pila un elemento numérico"... sino "quita de la pila un elemento no numérico que deberá ser convertido a número". Está bueno que lo hayas notado...
-
-      TOI (let [elem (last pila),
-                res (pasar-a-int elem)]
-            (if (integer? res)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) res) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
-
+      TOI (let [res (toi cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
       ; TOF: Incrementa cont-prg en 1, quita de la pila un elemento numerico, lo convierte a punto flotante y lo coloca al final de la pila.
-
-      TOF (let [elem (last pila),
-                res (pasar-a-float elem)]
-            (if (float? res)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) res) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
+      TOF (let [res (tof cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; SQRT: Incrementa cont-prg en 1, quita de la pila un elemento numerico, calcula su raiz cuadrada y la coloca al final de la pila.
-
-      SQRT (let [elem (last pila)]
-            (if (number? elem)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/sqrt elem)) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
+      SQRT (let [res (sqrt cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; SIN: Incrementa cont-prg en 1, quita de la pila un elemento numerico, calcula su seno y lo coloca al final de la pila.
-
-      SIN (let [elem (last pila)]
-            (if (number? elem)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/sin elem)) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
+      SIN (let [res (sin cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; ATAN: Incrementa cont-prg en 1, quita de la pila un elemento numerico, calcula su arcotangente y la coloca al final de la pila.
-
-      ATAN (let [elem (last pila)]
-            (if (number? elem)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/atan elem)) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
+      ATAN (let [res (atan cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; ABS: Incrementa cont-prg en 1, quita de la pila un elemento numerico, calcula su valor absoluto y lo coloca al final de la pila.
-
-      ABS (let [elem (last pila)]
-            (if (number? elem)
-              (recur cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/abs elem)) mapa-regs)
-              (do (print "ERROR: ") (println (buscar-mensaje 56)) nil)))
-)))
+      ABS (let [res (abs cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LAS FUNCIONES QUE SIGUEN DEBERAN SER IMPLEMENTADAS PARA QUE ANDE EL INTERPRETE DE RUST
@@ -2000,10 +2158,6 @@
 ; }
 ;
 ; nil
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TODO: fixear caso de < > = después de paréntesis. Qué pasa con <=?
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn imprimir-indentacion [indentacion]
@@ -2098,9 +2252,6 @@
         (not (every? #(or (Character/isLetterOrDigit %) (= \_ %)) (name elem)))
       ))
 )
-
-;; TODO: tengo que verificar strings, chars, etc? saque (symbol? elem) con el and
-;; TODO: falta chequear que no sea un número el primer caracter?
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; DUMP: Recibe un vector con instrucciones de la RI y las imprime numeradas a partir de 0. Siempre devuelve nil.
