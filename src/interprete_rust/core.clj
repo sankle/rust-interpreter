@@ -1574,6 +1574,10 @@
           (generar ,,, 'FMT)))
     amb))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Sub-funciones de interpretar
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn pushfi [cod regs-de-act cont-prg pila mapa-regs]
   (let [fetched (cod cont-prg)]
     [cod regs-de-act (inc cont-prg) (conj pila (second fetched)) mapa-regs]))
@@ -1665,7 +1669,7 @@
   (let [res (aplicar-operador-diadico dividir pila)]
     (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
 
-(defn mod [cod regs-de-act cont-prg pila mapa-regs]
+(defn local-mod [cod regs-de-act cont-prg pila mapa-regs]
   (let [res (aplicar-operador-diadico rem pila)]
     (if (nil? res) res [cod regs-de-act (inc cont-prg) res mapa-regs])))
 
@@ -1752,7 +1756,7 @@
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/atan elem)) mapa-regs]
       (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
 
-(defn abs [cod regs-de-act cont-prg pila mapa-regs]
+(defn local-abs [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila)]
     (if (number? elem)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/abs elem)) mapa-regs]
@@ -2056,7 +2060,7 @@
                 (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; MOD: Como ADD, pero calcula el resto de la division.
-      MOD (let [res (mod cod regs-de-act cont-prg pila mapa-regs)]
+      MOD (let [res (local-mod cod regs-de-act cont-prg pila mapa-regs)]
                 (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
                 (recur cod regs-de-act cont-prg pila mapa-regs))))
 
@@ -2140,7 +2144,7 @@
                 (recur cod regs-de-act cont-prg pila mapa-regs))))
 
       ; ABS: Incrementa cont-prg en 1, quita de la pila un elemento numerico, calcula su valor absoluto y lo coloca al final de la pila.
-      ABS (let [res (abs cod regs-de-act cont-prg pila mapa-regs)]
+      ABS (let [res (local-abs cod regs-de-act cont-prg pila mapa-regs)]
                 (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
                 (recur cod regs-de-act cont-prg pila mapa-regs)))))))
 

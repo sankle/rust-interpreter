@@ -8,7 +8,7 @@
   )
 
   (testing "Test del efecto colateral"
-    (is (= "fn main ( )\n{\n  println! ( \"Hola, mundo!\" )\n}\n" (with-out-str (listar (list 'fn 'main (symbol "(") (symbol ")") (symbol "{") 'println! (symbol "(") "Hola, mundo!" (symbol ")") (symbol "}"))))))
+    (is (= "fn main ( ) \n{\n  println! ( \"Hola, mundo!\" ) \n}\n" (with-out-str (listar (list 'fn 'main (symbol "(") (symbol ")") (symbol "{") 'println! (symbol "(") "Hola, mundo!" (symbol ")") (symbol "}"))))))
   )
 )
 
@@ -224,5 +224,612 @@
   (testing "Test del valor de retorno"
     (is (= [[['String "2"] ['i64 6] ['i64 2] ['i64 2] ['i64 0]] [['i64 6] ['i64 2] ['i64 [0 3]] ['i64 [0 4]] ['i64 2] ['i64 2]]] (cargar-en-reg-dest [[['String "2"] ['i64 6] ['i64 2] ['i64 2] ['i64 2]] [['i64 6] ['i64 2] ['i64 [0 3]] ['i64 [0 4]] ['i64 2] ['i64 2]]] [0 4] 'i64 0)))
     (is (= [[['String "2"] ['i64 6] ['i64 2] ['f64 3] ['i64 0]] [['i64 6] ['i64 2] ['i64 [0 3]] ['i64 [0 4]] ['i64 2] ['i64 2]]] (cargar-en-reg-dest [[['String "2"] ['i64 6] ['i64 2] ['i64 2] ['i64 0]] [['i64 6] ['i64 2] ['i64 [0 3]] ['i64 [0 4]] ['i64 2] ['i64 2]]] [0 3] 'f64 3)))
+  )
+)
+
+(deftest pushfi-test
+  (let [cod [['PUSHFI "**************************************************************"]],
+        regs-de-act [[['String nil] ['i64 nil] ['i64 nil] ['i64 nil] ['i64 nil]]],
+        regs-de-act-esperados [[['String nil] ['i64 nil] ['i64 nil] ['i64 nil] ['i64 nil]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1],
+        pila-esperada [1 "**************************************************************"],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+  (testing "Test del valor de retorno"
+      (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (pushfi cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest pushfm-test
+  (let [cod [['PUSHFM 0]],
+        regs-de-act [[['String "23"] ['i64 nil] ['i64 nil] ['i64 nil] ['i64 nil]]],
+        regs-de-act-esperados [[['String "23"] ['i64 nil] ['i64 nil] ['i64 nil] ['i64 nil]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1],
+        pila-esperada [1 "23"],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+  (testing "Test del valor de retorno"
+      (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (pushfm cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest jmp-test
+  (let [cod [['JMP 29]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 0] ['i64 23]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 nil] ['i64 nil]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 0] ['i64 23]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 nil] ['i64 nil]]],
+        cont-prg 0,
+        cont-prg-esperado 29,
+        pila [1],
+        pila-esperada [1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+  (testing "Test del valor de retorno"
+      (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (jmp cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest jc-test
+  (testing "Test del valor de retorno"
+    (let [cod [['JC 29]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 0] ['i64 23]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 nil] ['i64 nil]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 0] ['i64 23]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 nil] ['i64 nil]]],
+        cont-prg 0,
+        cont-prg-esperado 29,
+        pila [1 true],
+        pila-esperada [1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+      (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (jc cod regs-de-act cont-prg pila mapa-regs)))
+    )
+    (let [cod [['JC 29]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 0] ['i64 23]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 nil] ['i64 nil]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 0] ['i64 23]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 nil] ['i64 nil]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 false],
+        pila-esperada [1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+      (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (jc cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest cal-test
+  (let [cod [['CAL 105]],
+        regs-de-act [],
+        regs-de-act-esperados [[[(quote 'String) nil]]],
+        cont-prg 0,
+        cont-prg-esperado 105,
+        pila [],
+        pila-esperada [1],
+        mapa-regs '{105 [['String nil]]},
+        mapa-regs-esperados '{105 [['String nil]]}]
+  (testing "Test del valor de retorno"
+      (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (cal cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest retn-test
+  (let [cod ['RETN],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 4] ['i64 3]]],
+        regs-de-act-esperados [],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1],
+        pila-esperada [],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+  (testing "Test del valor de retorno"
+      (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (retn cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest nl-test
+  (let [cod ['NL],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 4] ['i64 3]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 4] ['i64 3]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1],
+        pila-esperada [1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (nl cod regs-de-act cont-prg pila mapa-regs)))
+    )
+
+    (testing "Test del efecto colateral"
+      (is (= "\n" (with-out-str (nl cod regs-de-act cont-prg pila mapa-regs))))
+    )
+  )
+)
+
+(deftest local-flush-test
+  (let [cod ['FLUSH],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 4] ['i64 3]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 4] ['i64 3]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1],
+        pila-esperada [1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (local-flush cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popsub-test
+  (let [cod [['POPSUB 5]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 18]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 2],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popsub cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popmul-test
+  (let [cod [['POPMUL 5]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 40]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 2],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popmul cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popdiv-test
+  (let [cod [['POPDIV 5]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 10]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 2],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popdiv cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popmod-test
+  (let [cod [['POPMOD 5]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 0]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 2],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popmod cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popsubref-test
+  (let [cod [['POPSUBREF 2]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 3] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 2] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popsubref cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popmulref-test
+  (let [cod [['POPMULREF 2]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 3] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 2],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popmulref cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popdivref-test
+  (let [cod [['POPDIVREF 2]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 3] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 2],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popdivref cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest popmodref-test
+  (let [cod [['POPMODREF 2]],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 0] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 2],
+        pila-esperada [1 150],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (popmodref cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest sub-test
+  (let [cod ['SUB],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 3 2],
+        pila-esperada [1 150 1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (sub cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest mul-test
+  (let [cod ['MUL],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 3 2],
+        pila-esperada [1 150 6],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (mul cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest div-test
+  (let [cod ['DIV],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 6 2],
+        pila-esperada [1 150 3],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (div cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest local-mod-test
+  (let [cod ['MOD],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 6 4],
+        pila-esperada [1 150 2],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (local-mod cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest chr-test
+  (let [cod ['CHR],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 "PRUEBA" 3],
+        pila-esperada [1 150 \E],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (chr cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest local-or-test
+  (let [cod ['OR],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 true false],
+        pila-esperada [1 150 true],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (local-or cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest local-and-test
+  (let [cod ['AND],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 true false],
+        pila-esperada [1 150 false],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (local-and cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest eq-test
+  (let [cod ['EQ],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 true],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (eq cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest neq-test
+  (let [cod ['NEQ],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 false],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (neq cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest gt-test
+  (let [cod ['GT],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 false],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (gt cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest gte-test
+  (let [cod ['GTE],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 true],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (gte cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest lt-test
+  (let [cod ['LT],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 false],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (lt cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest lte-test
+  (let [cod ['LTE],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 true],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (lte cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest neg-test
+  (let [cod ['NEG],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 1 -1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (neg cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest not-test
+  (let [cod ['NOT],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 true],
+        pila-esperada [1 150 1 false],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (local-not cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest toi-test
+  (let [cod ['TOI],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1.0],
+        pila-esperada [1 150 1 1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (toi cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest tof-test
+  (let [cod ['TOF],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 1 1.0],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (tof cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest sqrt-test
+  (let [cod ['SQRT],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 16],
+        pila-esperada [1 150 1 4.0],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (sqrt cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest sin-test
+  (let [cod ['SIN],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 1 0.8414709848078965],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (sin cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest atan-test
+  (let [cod ['ATAN],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 1],
+        pila-esperada [1 150 1 0.7853981633974483],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (atan cod regs-de-act cont-prg pila mapa-regs)))
+    )
+  )
+)
+
+(deftest abs-test
+  (let [cod ['ABS],
+        regs-de-act [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        regs-de-act-esperados [[['String "5"] ['i64 23] ['i64 5] ['i64 6] ['i64 3]] [['i64 23] ['i64 5] ['i64 [0 3]] ['i64 [0 4]] ['i64 5] ['i64 20]]],
+        cont-prg 0,
+        cont-prg-esperado 1,
+        pila [1 150 1 -1],
+        pila-esperada [1 150 1 1],
+        mapa-regs '{},
+        mapa-regs-esperados '{}]
+    (testing "Test del valor de retorno"
+        (is (= [cod regs-de-act-esperados cont-prg-esperado pila-esperada mapa-regs-esperados] (local-abs cod regs-de-act cont-prg pila mapa-regs)))
+    )
   )
 )
