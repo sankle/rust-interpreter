@@ -215,7 +215,7 @@
     16 "SE ESPERABA LA PALABRA RESERVADA mut"
     17 "SE ESPERABA ABRIR UNA LLAVE:  {"
     18 "SE ESPERABA UN PUNTO Y COMA O CERRAR UNA LLAVE:  ; O }"
-    19 "SE ESPERABA UN TIPO DE VARIABLE:  i64, f64, bool, char O String"
+    19 "SE ESPERABA UN TIPO DE VARIABLE:  i32, i64, f64, bool, char O String"
     20 "SE ESPERABA UN TIPO DE CONSTANTE:  i64 O f64"
     21 "SE ESPERABA UN INICIO DE EXPRESION"
     22 "SE ESPERABA LA PALABRA RESERVADA exit"
@@ -233,7 +233,7 @@
     34 "SE ESPERABA UNA DE LAS PALABRAS RESERVADAS new O from"
     35 "SE ESPERABA UNA DE LAS PALABRAS RESERVADAS as_str O trim"
     36 "SE ESPERABA UNA DE LAS PALABRAS RESERVADAS to_string O parse"
-    37 "SE ESPERABA UN TIPO NUMERICO:  i64, f64 O usize"
+    37 "SE ESPERABA UN TIPO NUMERICO:  i32, i64, f64 O usize"
     38 "SE ESPERABA UNA FUNCION MATEMATICA:  sqrt, sin, atan O abs"
     39 "SE ESPERABA UN NUMERO"
     40 "SE ESPERABA LA PALABRA RESERVADA fn"
@@ -792,6 +792,8 @@
 (defn procesar-tipo-variable [amb]
   (if (= (estado amb) :sin-errores)
     (case (simb-actual amb)
+      i32 (-> amb
+              (escanear))
       i64 (-> amb
               (escanear))
       f64 (-> amb
@@ -2225,7 +2227,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn palabra-reservada? [elem]
-  (let [palabras-reservadas (hash-set 'use 'const 'fn 'std 'io 'process 'Write 'i64 'f64 'mut 'bool 'String 'let 'char 'if 'else 'while 'return 'process 'exit 'format! 'print! 'println! 'io 'stdin 'stdout 'flush 'read_line 'new 'from 'as_str 'trim 'chars 'to_string 'parse 'nth 'sqrt 'sin 'atan 'abs 'as 'usize 'expect 'unwrap)]
+  (let [palabras-reservadas (hash-set 'use 'const 'fn 'std 'io 'process 'Write 'i32 'i64 'f64 'mut 'bool 'String 'let 'char 'if 'else 'while 'return 'process 'exit 'format! 'print! 'println! 'io 'stdin 'stdout 'flush 'read_line 'new 'from 'as_str 'trim 'chars 'to_string 'parse 'nth 'sqrt 'sin 'atan 'abs 'as 'usize 'expect 'unwrap)]
     (contains? palabras-reservadas elem)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2555,6 +2557,7 @@
 (defn compatibles? [tipo valor]
   (or
     (vector? valor)
+    (and (= 'i32 tipo) (integer? valor))
     (and (= 'i64 tipo) (integer? valor))
     (and (= 'f64 tipo) (float? valor))
     (and (= 'String tipo) (string? valor))
