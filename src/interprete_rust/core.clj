@@ -102,7 +102,7 @@
 (declare procesar-mas-opcional-expresion)
 (declare procesar-opcional-expresion)
 (declare generar-factor-const-o-var)
-(declare procesar-opcional-asignacion-llamada)
+(declare procesar-opcional-asignacion-llamada-inc)
 (declare generar-ref)
 (declare expresion-atomica)
 (declare expresion-unaria)
@@ -193,7 +193,7 @@
 (defn escanear-arch [nom]
   (map #(let [aux (try (clojure.edn/read-string %) (catch Exception e (symbol %)))] (if (or (number? aux) (string? aux) (instance? Boolean aux)) aux (symbol %)))
        (remove empty? (with-open [rdr (clojure.java.io/reader nom)]
-                        (flatten (doall (map #(re-seq #"print!|println!|format!|\:\:|\<\=|\>\=|\-\>|\=\=|\!\=|\+\=|\-\=|\*\=|\/\=|\%\=|\&\&|\|\||\<|\>|\=|\(|\)|\,|\;|\+|\-|\*|\/|\[|\]|\{|\}|\%|\&|\!|\:|\"[^\"]*\"|\d+\.\d+E[+-]?\d+|\d+\.E[+-]?\d+|\.\d+E[+-]?\d+|\d+E[+-]?\d+|\d+\.\d+|\d+\.|\.\d+|\.|\d+|\_[A-Za-z0-9\_]+|[A-Za-z][A-Za-z0-9\_]*|\.|\'|\"|\||\#|\$|\@|\?|\^|\\|\~" %) (line-seq rdr))))))))
+                        (flatten (doall (map #(re-seq #"print!|println!|format!|\+\+|\:\:|\<\=|\>\=|\-\>|\=\=|\!\=|\+\=|\-\=|\*\=|\/\=|\%\=|\&\&|\|\||\<|\>|\=|\(|\)|\,|\;|\+|\-|\*|\/|\[|\]|\{|\}|\%|\&|\!|\:|\"[^\"]*\"|\d+\.\d+E[+-]?\d+|\d+\.E[+-]?\d+|\.\d+E[+-]?\d+|\d+E[+-]?\d+|\d+\.\d+|\d+\.|\.\d+|\.|\d+|\_[A-Za-z0-9\_]+|[A-Za-z][A-Za-z0-9\_]*|\.|\'|\"|\||\#|\$|\@|\?|\^|\\|\~" %) (line-seq rdr))))))))
 
 (defn buscar-mensaje [cod]
   (case cod
@@ -657,7 +657,7 @@
     amb))
 
 (defn hace-push-implicito? [instr]
-  (contains? #{'ADD 'SUB 'MUL 'DIV 'MOD 'OR 'AND 'EQ 'NEQ 'GT 'GTE 'LT 'LTE 'NEG 'NOT 'SQRT 'SIN 'ATAN 'ABS 'TOI 'TOF} instr))
+  (contains? #{'ADD 'SUB 'MUL 'DIV 'MOD 'OR 'AND 'EQ 'NEQ 'GT 'GTE 'LT 'LTE 'NEG 'INC 'NOT 'SQRT 'SIN 'ATAN 'ABS 'TOI 'TOF} instr))
 
 (defn confirmar-retorno [amb]
   (if (= (estado amb) :sin-errores)
@@ -1109,7 +1109,7 @@
           (generar amb 'PUSHREF valor))))
     amb))
 
-(defn procesar-opcional-asignacion-llamada [amb puntero?]
+(defn procesar-opcional-asignacion-llamada-inc [amb puntero?]
   (if (= (estado amb) :sin-errores)
     (let [ident (last (simb-ya-parseados amb))]
       (cond
@@ -1185,6 +1185,12 @@
               (escanear)
               (expresion)
               (generar-con-valor ,,, 'POPMODREF ident)))
+        (= (simb-actual amb) (symbol "++"))
+        (if (not puntero?)
+          (-> amb
+              (escanear)
+              (generar-con-valor ,,, 'PUSHFM ident)
+              (generar ,,, 'INC)))
         (= (simb-actual amb) (symbol "("))
         (-> amb
             (verificar-que-sea-fn)
@@ -1218,7 +1224,7 @@
       (identificador? (simb-actual amb))
       (-> amb
           (escanear)
-          (procesar-opcional-asignacion-llamada ,,, false)
+          (procesar-opcional-asignacion-llamada-inc ,,, false)
           (procesar-opcional-as-punto))
       (= (simb-actual amb) (symbol "("))
       (-> amb
@@ -1329,7 +1335,7 @@
         * (-> amb
               (escanear)
               (procesar-terminal ,,, identificador? 10)
-              (procesar-opcional-asignacion-llamada ,,, true)
+              (procesar-opcional-asignacion-llamada-inc ,,, true)
               (procesar-opcional-as-punto))
         (dar-error amb 21)))
     amb))
@@ -1718,51 +1724,57 @@
   (let [elem (last pila)]
     (if (number? elem)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (- elem)) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
+
+(defn local-inc [cod regs-de-act cont-prg pila mapa-regs]
+  (let [elem (last pila)]
+    (if (number? elem)
+      [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (inc elem)) mapa-regs]
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 (defn local-not [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila)]
     (if (boolean? elem)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (not elem)) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 (defn toi [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila),
         res (pasar-a-int elem)]
     (if (integer? res)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) res) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 (defn tof [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila),
         res (pasar-a-float elem)]
     (if (float? res)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) res) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 (defn sqrt [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila)]
     (if (number? elem)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/sqrt elem)) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 (defn sin [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila)]
     (if (number? elem)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/sin elem)) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 (defn atan [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila)]
     (if (number? elem)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/atan elem)) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 (defn local-abs [cod regs-de-act cont-prg pila mapa-regs]
   (let [elem (last pila)]
     (if (number? elem)
       [cod regs-de-act (inc cont-prg) (conj (vec (drop-last pila)) (Math/abs elem)) mapa-regs]
-      (do (print "ERROR: ") (println (buscar-mensaje 56)) nil))))
+      (do (print "ERROR: ") (println (buscar-mensaje 55)) nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LA SIGUIENTE FUNCION DEBERA SER COMPLETADA PARA QUE ANDE EL INTERPRETE DE RUST
@@ -2113,6 +2125,11 @@
 
       ; NEG: Incrementa cont-prg en 1, quita de la pila un elemento numerico, le cambia el signo y lo coloca al final de la pila.
       NEG (let [res (neg cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
+
+      ; NEG: Incrementa cont-prg en 1, quita de la pila un elemento numerico, le cambia el signo y lo coloca al final de la pila.
+      INC (let [res (local-inc cod regs-de-act cont-prg pila mapa-regs)]
                 (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
                 (recur cod regs-de-act cont-prg pila mapa-regs))))
 
