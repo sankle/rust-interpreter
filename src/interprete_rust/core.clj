@@ -193,7 +193,7 @@
 (defn escanear-arch [nom]
   (map #(let [aux (try (clojure.edn/read-string %) (catch Exception e (symbol %)))] (if (or (number? aux) (string? aux) (instance? Boolean aux)) aux (symbol %)))
        (remove empty? (with-open [rdr (clojure.java.io/reader nom)]
-                        (flatten (doall (map #(re-seq #"print!|println!|format!|\+\+|\:\:|\<\=|\>\=|\-\>|\=\=|\!\=|\+\=|\-\=|\*\=|\/\=|\%\=|\&\&|\|\||\<|\>|\=|\(|\)|\,|\;|\+|\-|\*|\/|\[|\]|\{|\}|\%|\&|\!|\:|\"[^\"]*\"|\d+\.\d+E[+-]?\d+|\d+\.E[+-]?\d+|\.\d+E[+-]?\d+|\d+E[+-]?\d+|\d+\.\d+|\d+\.|\.\d+|\.|\d+|\_[A-Za-z0-9\_]+|[A-Za-z][A-Za-z0-9\_]*|\.|\'|\"|\||\#|\$|\@|\?|\^|\\|\~" %) (line-seq rdr))))))))
+                        (flatten (doall (map #(re-seq #"print!|println!|format!|\<\<\=|\+\+|\:\:|\<\=|\>\=|\-\>|\=\=|\!\=|\+\=|\-\=|\*\=|\/\=|\%\=|\&\&|\|\||\<|\>|\=|\(|\)|\,|\;|\+|\-|\*|\/|\[|\]|\{|\}|\%|\&|\!|\:|\"[^\"]*\"|\d+\.\d+E[+-]?\d+|\d+\.E[+-]?\d+|\.\d+E[+-]?\d+|\d+E[+-]?\d+|\d+\.\d+|\d+\.|\.\d+|\.|\d+|\_[A-Za-z0-9\_]+|[A-Za-z][A-Za-z0-9\_]*|\.|\'|\"|\||\#|\$|\@|\?|\^|\\|\~" %) (line-seq rdr))))))))
 
 (defn buscar-mensaje [cod]
   (case cod
@@ -1185,6 +1185,18 @@
               (escanear)
               (expresion)
               (generar-con-valor ,,, 'POPMODREF ident)))
+        (= (simb-actual amb) (symbol "<<="))
+        (if (not puntero?)
+          (-> amb
+              (verificar-que-sea-var)
+              (escanear)
+              (expresion)
+              (generar-con-valor ,,, 'POPSHIFTLEFT ident))
+          (-> amb
+              (verificar-que-sea-var-ref)
+              (escanear)
+              (expresion)
+              (generar-con-valor ,,, 'POPSHIFTLEFTREF ident)))
         (= (simb-actual amb) (symbol "++"))
         (if (not puntero?)
           (-> amb
@@ -1641,6 +1653,12 @@
         res (asignar-aritmetico regs-de-act pila reg-actual fetched rem)]
     (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
 
+(defn popshiftleft [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico regs-de-act pila reg-actual fetched bit-shift-left)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
 (defn popsubref [cod regs-de-act cont-prg pila mapa-regs]
   (let [fetched (cod cont-prg),
         reg-actual (last regs-de-act)
@@ -1663,6 +1681,12 @@
   (let [fetched (cod cont-prg),
         reg-actual (last regs-de-act)
         res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched rem)]
+    (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
+
+(defn popshiftleftref [cod regs-de-act cont-prg pila mapa-regs]
+  (let [fetched (cod cont-prg),
+        reg-actual (last regs-de-act)
+        res (asignar-aritmetico-ref regs-de-act pila reg-actual fetched bit-shift-left)]
     (if (nil? res) res [cod res (inc cont-prg) (vec (butlast pila)) mapa-regs])))
 
 (defn sub [cod regs-de-act cont-prg pila mapa-regs]
@@ -2038,6 +2062,10 @@
                 (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
                 (recur cod regs-de-act cont-prg pila mapa-regs))))
 
+      POPSHIFTLEFT (let [res (popshiftleft cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
+
       ; POPSUBREF: Como POPADDREF, pero resta.
       POPSUBREF (let [res (popsubref cod regs-de-act cont-prg pila mapa-regs)]
                 (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
@@ -2055,6 +2083,10 @@
 
       ; POPMODREF: Como POPADDREF, pero calcula el resto de la division.
       POPMODREF (let [res (popmodref cod regs-de-act cont-prg pila mapa-regs)]
+                (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
+                (recur cod regs-de-act cont-prg pila mapa-regs))))
+
+      POPSHIFTLEFTREF (let [res (popshiftleftref cod regs-de-act cont-prg pila mapa-regs)]
                 (if (nil? res) res (let [[cod regs-de-act cont-prg pila mapa-regs] res]
                 (recur cod regs-de-act cont-prg pila mapa-regs))))
 
