@@ -4,7 +4,7 @@ Simplified Rust interpreter developed in Clojure.
 
 Workshop developed for (75.14) Formal Languages - Faculty of Engineering - University of Buenos Aires. 
 
-Prof. Dr. Diego Corsi.
+Base code provided by Prof. Dr. Diego Corsi.
 
 ## Usage
 
