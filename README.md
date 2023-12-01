@@ -2,7 +2,9 @@
 
 Simplified Rust interpreter developed in Clojure. 
 
-Workshop for `(75.14) Lenguajes Formales - Faculty of Engineering - University of Buenos Aires`. Prof. Dr. Diego Corsi.
+Workshop developed for (75.14) Formal Languages - Faculty of Engineering - University of Buenos Aires. 
+
+Prof. Dr. Diego Corsi.
 
 ## Usage
 
